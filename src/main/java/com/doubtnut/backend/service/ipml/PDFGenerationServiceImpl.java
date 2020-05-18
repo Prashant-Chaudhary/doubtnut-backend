@@ -10,6 +10,7 @@ import com.doubtnut.backend.model.RelatedQuestion;
 import com.doubtnut.backend.service.PDFGenerationService;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Element;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.PdfPCell;
@@ -34,60 +35,70 @@ public class PDFGenerationServiceImpl implements PDFGenerationService {
 		list.add(q5);
 		list.add(q6);
 		list.add(q7);
-		generatePDF(list);
+		new PDFGenerationServiceImpl().generatePDF(list);
 	}
 
 	/**
-	 * 
+	 * Method to generate PDF from List of Questions
 	 */
-	private static void generatePDF(List<RelatedQuestion> list) {
+	@Override
+	public long generatePDF(List<RelatedQuestion> list) {
 		Document document = new Document();
+		long timeStamp = System.currentTimeMillis();
 		try {
-			PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream("pdfs/AddTableExample.pdf"));
+
+			PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream("pdfs/" + timeStamp + ".pdf"));
 			document.open();
 
-			PdfPTable table = new PdfPTable(2); // 3 columns.
+			PdfPTable table = new PdfPTable(2); // 2 columns.
 			table.setWidthPercentage(100); // Width 100%
 			table.setSpacingBefore(10f); // Space before table
 			table.setSpacingAfter(10f); // Space after table
 
-			// Set Column widths
-			float[] columnWidths = { 1f, 1f };
-			table.setWidths(columnWidths);
-
-			PdfPCell cell1 = new PdfPCell(new Paragraph("Ques. No."));
-			cell1.setBorderColor(BaseColor.BLUE);
-			cell1.setPaddingLeft(10);
-			cell1.setHorizontalAlignment(Element.ALIGN_CENTER);
-			cell1.setVerticalAlignment(Element.ALIGN_MIDDLE);
-
-			PdfPCell cell2 = new PdfPCell(new Paragraph("Related Question"));
-			cell2.setBorderColor(BaseColor.GREEN);
-			cell2.setPaddingLeft(10);
-			cell2.setHorizontalAlignment(Element.ALIGN_CENTER);
-			cell2.setVerticalAlignment(Element.ALIGN_MIDDLE);
-
-			// To avoid having the cell border and the content overlap, if you are having
-			// thick cell borders
-			// cell1.setUserBorderPadding(true);
-			// cell2.setUserBorderPadding(true);
-			// cell3.setUserBorderPadding(true);
-
-			table.addCell(cell1);
-			table.addCell(cell2);
+			setColumnStructure(table);
+			table.getDefaultCell().setHorizontalAlignment(Element.ALIGN_CENTER);
+			PdfPCell[] cells = table.getRow(0).getCells();
+			for (int j = 0; j < cells.length; j++) {
+				cells[j].setBackgroundColor(BaseColor.GRAY);
+			}
 			for (RelatedQuestion ques : list) {
 				table.addCell(ques.getId() + "");
 				table.addCell(ques.getQuestion());
 
 			}
-
 			document.add(table);
-			
 			document.close();
 			writer.close();
 			System.out.println("PDF Generated");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return timeStamp;
 	}
+
+	/**
+	 * @param table
+	 * @throws DocumentException
+	 */
+	private void setColumnStructure(PdfPTable table) throws DocumentException {
+		// Set Column widths
+		float[] columnWidths = { 1f, 3f };
+		table.setWidths(columnWidths);
+
+		PdfPCell cell1 = new PdfPCell(new Paragraph("Ques. No."));
+		cell1.setBorderColor(BaseColor.BLUE);
+		cell1.setPaddingLeft(10);
+		cell1.setHorizontalAlignment(Element.ALIGN_CENTER);
+		cell1.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+		PdfPCell cell2 = new PdfPCell(new Paragraph("Related Question"));
+		cell2.setBorderColor(BaseColor.GREEN);
+		cell2.setPaddingLeft(10);
+		cell2.setHorizontalAlignment(Element.ALIGN_CENTER);
+		cell2.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+		table.addCell(cell1);
+		table.addCell(cell2);
+	}
+
 }

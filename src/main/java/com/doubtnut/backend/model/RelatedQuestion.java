@@ -1,9 +1,13 @@
 package com.doubtnut.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class RelatedQuestion {
 
+	@JsonProperty("id")
 	long id;
 
+	@JsonProperty("question_text")
 	String question;
 
 	/**
