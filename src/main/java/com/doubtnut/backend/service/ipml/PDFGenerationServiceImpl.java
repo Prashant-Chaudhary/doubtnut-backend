@@ -6,8 +6,13 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.doubtnut.backend.model.LastAPIRelatedQuestion;
 import com.doubtnut.backend.model.RelatedQuestion;
+import com.doubtnut.backend.request.RelatedQuestionRequest;
+import com.doubtnut.backend.request.RelatedQuestionRequestData;
+import com.doubtnut.backend.response.QuestionListResponse;
 import com.doubtnut.backend.service.PDFGenerationService;
+import com.doubtnut.backend.util.InactivityUtils;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -19,6 +24,9 @@ import com.itextpdf.text.pdf.PdfWriter;
 
 @Service
 public class PDFGenerationServiceImpl implements PDFGenerationService {
+
+	static List<RelatedQuestion> questionList = new ArrayList<RelatedQuestion>();
+
 	public static void main(String[] args) {
 		List<RelatedQuestion> list = new ArrayList<RelatedQuestion>();
 		RelatedQuestion q1 = new RelatedQuestion(1, " Question 1");
@@ -35,19 +43,19 @@ public class PDFGenerationServiceImpl implements PDFGenerationService {
 		list.add(q5);
 		list.add(q6);
 		list.add(q7);
-		new PDFGenerationServiceImpl().generatePDF(list);
+		new PDFGenerationServiceImpl().generatePDF(list , (long)1);
 	}
 
 	/**
 	 * Method to generate PDF from List of Questions
 	 */
 	@Override
-	public long generatePDF(List<RelatedQuestion> list) {
+	public long generatePDF(List<RelatedQuestion> list, Long userId) {
 		Document document = new Document();
 		long timeStamp = System.currentTimeMillis();
 		try {
 
-			PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream("pdfs/" + timeStamp + ".pdf"));
+			PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream("pdfs/" + userId+"-"+timeStamp + ".pdf"));
 			document.open();
 
 			PdfPTable table = new PdfPTable(2); // 2 columns.
@@ -99,6 +107,37 @@ public class PDFGenerationServiceImpl implements PDFGenerationService {
 
 		table.addCell(cell1);
 		table.addCell(cell2);
+	}
+
+	@Override
+	public long addQuestion(RelatedQuestion relatedQuestionRequest) {
+		questionList.add(relatedQuestionRequest);
+		return 1;
+	}
+
+	@Override
+	public QuestionListResponse getQuestion() {
+		QuestionListResponse response = new QuestionListResponse();
+		response.setQuestionList(questionList);
+		return response;
+	}
+
+	@Override
+	public long processRequest(RelatedQuestionRequest relatedQuestionRequest) {
+		RelatedQuestionRequestData data = relatedQuestionRequest.getData();
+		LastAPIRelatedQuestion lastEntry = InactivityUtils.getExistingProduct(data.getUserId());
+		if (lastEntry == null) {
+			lastEntry = new LastAPIRelatedQuestion();
+			lastEntry.setRelatedQuestionList(data.getList());
+			lastEntry.setTimestamp(System.currentTimeMillis());
+			lastEntry.setUserId(data.getUserId());
+		} else {
+			lastEntry.setRelatedQuestionList(data.getList());
+			lastEntry.setTimestamp(System.currentTimeMillis());
+			lastEntry.setUserId(data.getUserId());
+		}
+		InactivityUtils.addUpdateAPIList(lastEntry);
+		return 1;
 	}
 
 }
